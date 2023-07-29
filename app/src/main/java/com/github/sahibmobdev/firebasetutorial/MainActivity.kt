@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import com.github.sahibmobdev.firebasetutorial.databinding.ActivityMainBinding
 import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +31,9 @@ class MainActivity : AppCompatActivity() {
                 savePerson(person)
             }
         }
+        binding.btnRetrieveData.setOnClickListener {
+            retrievePersons()
+        }
 
     }
 
@@ -43,6 +47,25 @@ class MainActivity : AppCompatActivity() {
            withContext(Dispatchers.Main) {
                Toast.makeText(this@MainActivity, e.message.toString(), Toast.LENGTH_SHORT).show()
            }
+        }
+    }
+
+    private fun retrievePersons() = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val querySnapshot = personCollectionRef.get().await()
+            val sb = StringBuilder()
+            for (document in querySnapshot) {
+                val person = document.toObject<Person>()
+                sb.append("$person\n")
+            }
+            withContext(Dispatchers.Main) {
+                binding.tvPersons.text = sb.toString()
+            }
+
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, e.message.toString(), Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }
