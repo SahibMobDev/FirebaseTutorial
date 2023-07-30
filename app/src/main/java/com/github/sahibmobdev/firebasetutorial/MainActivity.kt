@@ -21,7 +21,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         binding.btnUploadData.setOnClickListener {
             binding.apply {
                 val firstName = etFirstName.text.toString()
@@ -31,9 +30,10 @@ class MainActivity : AppCompatActivity() {
                 savePerson(person)
             }
         }
-        binding.btnRetrieveData.setOnClickListener {
+        subscribesToRealTimeUpdate()
+/*        binding.btnRetrieveData.setOnClickListener {
             retrievePersons()
-        }
+        }*/
 
     }
 
@@ -65,6 +65,24 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 Toast.makeText(this@MainActivity, e.message.toString(), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun subscribesToRealTimeUpdate() {
+        personCollectionRef.addSnapshotListener { value, error ->
+            error?.let {
+                Toast.makeText(this, it.message.toString(), Toast.LENGTH_SHORT).show()
+                return@addSnapshotListener
+            }
+
+            value?.let {
+                val sb = StringBuilder()
+                for (document in it) {
+                    val person = document.toObject<Person>()
+                    sb.append(person)
+                }
+                binding.tvPersons.text = sb.toString()
             }
         }
     }
