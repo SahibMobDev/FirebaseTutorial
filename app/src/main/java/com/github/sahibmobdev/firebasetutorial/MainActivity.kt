@@ -30,10 +30,10 @@ class MainActivity : AppCompatActivity() {
                 savePerson(person)
             }
         }
-        subscribesToRealTimeUpdate()
-/*        binding.btnRetrieveData.setOnClickListener {
+
+        binding.btnRetrieveData.setOnClickListener {
             retrievePersons()
-        }*/
+        }
 
     }
 
@@ -51,8 +51,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun retrievePersons() = CoroutineScope(Dispatchers.IO).launch {
+        val fromAge = binding.etFrom.text.toString().toInt()
+        val toAge = binding.etTo.text.toString().toInt()
         try {
-            val querySnapshot = personCollectionRef.get().await()
+            val querySnapshot = personCollectionRef
+                .whereGreaterThan("age", fromAge)
+                .whereLessThan("age", toAge)
+                .orderBy("age")
+                .get().await()
             val sb = StringBuilder()
             for (document in querySnapshot) {
                 val person = document.toObject<Person>()
