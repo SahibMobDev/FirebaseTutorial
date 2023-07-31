@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
 import com.github.sahibmobdev.firebasetutorial.databinding.ActivityMainBinding
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.toObject
@@ -41,6 +42,38 @@ class MainActivity : AppCompatActivity() {
             setNewPersonData(oldPerson, newPerson)
         }
 
+        binding.btnDeletePerson.setOnClickListener {
+            val person = oldPersonData()
+            deletePersonData(person)
+        }
+
+    }
+
+    private fun deletePersonData(person: Person) = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val personQuery = personCollectionRef
+                .whereEqualTo("firstName", person.firstName)
+                .whereEqualTo("lastName", person.lastName)
+                .whereEqualTo("age", person.age)
+                .get()
+                .await()
+            for (document in personQuery) {
+                if (personQuery.documents.isNotEmpty()) {
+                    personCollectionRef.document(document.id).delete().await()
+/*                    personCollectionRef.document(document.id).update(mapOf(
+                        "firstName" to FieldValue.delete()
+                    ))*/
+                } else {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@MainActivity, "No person matched the query", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun oldPersonData(): Person {
