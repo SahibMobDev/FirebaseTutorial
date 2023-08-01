@@ -51,7 +51,29 @@ class MainActivity : AppCompatActivity() {
             changeName("ATBBGdNdJFhSatM7RB5z", "Mirtiz", "Mirtizov")
         }
 
+        binding.btnDoTransaction.setOnClickListener {
+            birthday("ATBBGdNdJFhSatM7RB5z")
+        }
+
     }
+
+    private fun birthday(personId: String) = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            Firebase.firestore.runTransaction { transaction ->
+                val personRefId = personCollectionRef.document(personId)
+                val person = transaction.get(personRefId)
+                val newAge = person["age"].toString().toLong() + 1
+                transaction.update(personRefId, "age", newAge)
+                null
+            }.await()
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+
 
     private fun changeName(
         personId: String,
