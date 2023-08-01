@@ -47,26 +47,48 @@ class MainActivity : AppCompatActivity() {
             deletePersonData(person)
         }
 
+        binding.btnBatchWrite.setOnClickListener {
+            changeName("ATBBGdNdJFhSatM7RB5z", "Mirtiz", "Mirtizov")
+        }
+
+    }
+
+    private fun changeName(
+        personId: String,
+        newFirstName: String,
+        newLastName: String
+    ) = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            Firebase.firestore.runBatch {batch ->
+                val personRef = personCollectionRef.document(personId)
+                batch.update(personRef, "firstName", newFirstName)
+                batch.update(personRef, "lastName", newLastName)
+            }.await()
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun deletePersonData(person: Person) = CoroutineScope(Dispatchers.IO).launch {
         try {
             val personQuery = personCollectionRef
-                .whereEqualTo("firstName", person.firstName)
+                .whereEqualTo("firstName" , person.firstName)
                 .whereEqualTo("lastName", person.lastName)
                 .whereEqualTo("age", person.age)
                 .get()
                 .await()
-            for (document in personQuery) {
-                if (personQuery.documents.isNotEmpty()) {
+            if (personQuery.documents.isNotEmpty()) {
+                for (document in personQuery)  {
                     personCollectionRef.document(document.id).delete().await()
-/*                    personCollectionRef.document(document.id).update(mapOf(
-                        "firstName" to FieldValue.delete()
-                    ))*/
-                } else {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(this@MainActivity, "No person matched the query", Toast.LENGTH_LONG).show()
-                    }
+/*                    personCollectionRef.document(document.id).update(
+                        mapOf( "firstName" to FieldValue.delete())
+                    )*/
+                }
+            } else {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "No person matched the query", Toast.LENGTH_LONG).show()
                 }
             }
         } catch (e: Exception) {
